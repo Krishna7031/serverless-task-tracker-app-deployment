@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Serverless Task Tracker</title>
+</head>
+<body>
+
+<h1>Serverless Task Tracker</h1>
+<button onclick="login()">Login</button>
+<button onclick="addTask()">Add Task</button>
+<button onclick="getTasks()">View Tasks</button>
+
+<pre id="output"></pre>
+
+<script>
+const domain = "https://us-east-1qt2wfuavj.auth.us-east-1.amazoncognito.com";
+const clientId = "1so53v3hvrpodqh7j5nhnk3rji";
+const redirectUri = "https://d2iiv4s8g1ebh.cloudfront.net/index.html";
+const apiBase = "https://g501prpqhk.execute-api.us-east-1.amazonaws.com/dev";
+
+function login() {
+  window.location.href =
+    `${domain}/login?response_type=token&client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=openid+email`;
+}
+
+// Extract token from URL hash
+function getToken() {
+  if (window.location.hash) {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const token = params.get("id_token");
+    if (token) {
+      localStorage.setItem("id_token", token);
+      window.history.replaceState({}, document.title, "/index.html");
+      return token;
+    }
+  }
+  return localStorage.getItem("id_token");
+}
+
+async function addTask() {
+  const token = getToken();
+  const res = await fetch(`${apiBase}/tasks`, {
+    method: "POST",
+    headers: {
+      "Authorization": token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ task_name: "Task from UI" })
+  });
+  document.getElementById("output").innerText =
+    JSON.stringify(await res.json(), null, 2);
+}
+
+async function getTasks() {
+  const token = getToken();
+  const res = await fetch(`${apiBase}/tasks`, {
+    headers: {
+      "Authorization": token
+    }
+  });
+  document.getElementById("output").innerText =
+    JSON.stringify(await res.json(), null, 2);
+}
+</script>
+
+</body>
+</html>
+
